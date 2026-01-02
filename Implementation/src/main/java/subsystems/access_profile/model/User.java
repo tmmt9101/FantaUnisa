@@ -1,9 +1,11 @@
 package subsystems.access_profile.model;
 
+import java.io.Serializable;
+
 /**
  * Rappresenta l'utente registrato nel sistema.
  */
-public class User {
+public class User implements Serializable {
 
     private String nome;
     private String cognome;
