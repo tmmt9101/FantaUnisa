@@ -90,11 +90,13 @@ CREATE TABLE post (
 CREATE TABLE comment (
    id INT AUTO_INCREMENT PRIMARY KEY,
    post_id INT NOT NULL,
+   formation_id INT DEFAULT NULL,
    user_email VARCHAR(100) NOT NULL,
    testo TEXT NOT NULL,
    data_ora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
    FOREIGN KEY (post_id) REFERENCES post(id) ON DELETE CASCADE,
-   FOREIGN KEY (user_email) REFERENCES user(email) ON DELETE CASCADE
+   FOREIGN KEY (user_email) REFERENCES user(email) ON DELETE CASCADE,
+   FOREIGN KEY (formation_id) REFERENCES formation(id) ON DELETE SET NULL
 );
 
 -- Tabella REAZIONI (Like/Dislike)
@@ -103,6 +105,17 @@ CREATE TABLE reaction (
    post_id INT,
    tipo VARCHAR(20) NOT NULL,
    PRIMARY KEY (user_email, post_id),
+   FOREIGN KEY (user_email) REFERENCES user(email) ON DELETE CASCADE,
+   FOREIGN KEY (post_id) REFERENCES post(id) ON DELETE CASCADE
+);
+
+-- Tabella SEGNALAZIONI
+CREATE TABLE report (
+   id INT AUTO_INCREMENT PRIMARY KEY,
+   user_email VARCHAR(100),
+   post_id INT,
+   motivo VARCHAR(255) NOT NULL,
+   data_ora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
    FOREIGN KEY (user_email) REFERENCES user(email) ON DELETE CASCADE,
    FOREIGN KEY (post_id) REFERENCES post(id) ON DELETE CASCADE
 );
