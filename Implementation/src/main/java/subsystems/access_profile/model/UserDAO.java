@@ -154,14 +154,13 @@ public class UserDAO {
     }
 
     public void doUpdateInfo(User user) {
-        String query = "UPDATE user SET nome = ?, cognome = ? WHERE email = ?";
+        String query = "UPDATE user SET nome = ?, cognome = ?";
 
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(query)) {
 
             ps.setString(1, user.getNome());
             ps.setString(2, user.getCognome());
-            ps.setString(3, user.getEmail());
 
             ps.executeUpdate();
 
