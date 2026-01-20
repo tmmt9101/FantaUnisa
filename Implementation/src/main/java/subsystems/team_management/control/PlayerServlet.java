@@ -18,23 +18,22 @@ public class PlayerServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        // Controllo Sessione (opzionale, se vuoi che il listone sia pubblico toglilo)
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("user") == null) {
             response.sendRedirect("view/login.jsp");
             return;
         }
 
-        String ruolo = request.getParameter("ruolo");   // Es. "P", "D", "C", "A"
-        String squadra = request.getParameter("squadra"); // Es. "Milan", "Napoli"
+        String ruolo = request.getParameter("ruolo");
+        String squadra = request.getParameter("squadra");
 
         PlayerDAO playerDAO = new PlayerDAO();
         List<Player> players = playerDAO.doRetrieveByFilter(ruolo, squadra);
 
-        // Imposta attributi per la JSP
+
         request.setAttribute("players", players);
 
-        // Passiamo anche i filtri correnti per mantenerli selezionati nella select HTML
+
         request.setAttribute("selectedRuolo", ruolo);
         request.setAttribute("selectedSquadra", squadra);
 
