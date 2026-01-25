@@ -8,14 +8,17 @@ import java.util.List;
 public class ReportDAO {
 
     public void doSave(Report report) {
-        String query = "INSERT INTO report (user_email, post_id, motivo, data_ora) VALUES (?, ?, ?, ?)";
+        // RIMOSSO data_ora dalla query: lascia che il DB usi il DEFAULT CURRENT_TIMESTAMP
+        String query = "INSERT INTO report (user_email, post_id, motivo) VALUES (?, ?, ?)";
+
         try (Connection con = DBConnection.getConnection();
              PreparedStatement ps = con.prepareStatement(query)) {
 
             ps.setString(1, report.getUserEmail());
             ps.setInt(2, report.getPostId());
             ps.setString(3, report.getMotivo());
-            ps.setTimestamp(4, report.getDataOra());
+
+            // Non settiamo il timestamp (ps.setTimestamp), lo fa MySQL
 
             ps.executeUpdate();
         } catch (SQLException e) {

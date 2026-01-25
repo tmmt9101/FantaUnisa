@@ -41,14 +41,14 @@ public class ReportServlet extends HttpServlet {
                 reportDAO.doSave(report);
 
                 // Redirect con messaggio di successo
-                response.sendRedirect("PostServlet?msg=ReportSent");
+                response.sendRedirect(request.getContextPath() + "/PostServlet?msg=ReportSent");
                 return;
 
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
-        response.sendRedirect("community.jsp?error=ReportFailed");
+        response.sendRedirect(request.getContextPath() + "/PostServlet?error=ReportFailed");
     }
 
     @Override
@@ -71,7 +71,7 @@ public class ReportServlet extends HttpServlet {
             if (reportIdStr != null) {
                 reportDAO.doDelete(Integer.parseInt(reportIdStr));
             }
-            response.sendRedirect("ReportServlet?action=view");
+            response.sendRedirect(request.getContextPath()+"/ReportServlet?action=view");
 
         } else {
             List<Report> reports = reportDAO.doRetrieveAll();

@@ -33,7 +33,6 @@ public class AuthFilter implements Filter {
     // 3. RISORSE GESTORE UTENTI
     private static final String[] USER_ADMIN_URLS = {
             "/view/admin_moderation.jsp",
-            "/ReportServlet",
             "/BanUserServlet",      // Se esiste
             "/DeleteContentServlet" // Se esiste
     };
@@ -42,10 +41,8 @@ public class AuthFilter implements Filter {
     private static final String[] GAME_URLS = {
             "/view/rosa.jsp",
             "/view/formazione.jsp",
-            "/view/community.jsp",
             "/SquadServlet",
             "/FormationServlet",
-            "/PostServlet",
             "/ModuleServlet",
             "/CommentServlet",
             "/ReactionServlet",

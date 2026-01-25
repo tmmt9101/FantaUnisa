@@ -12,6 +12,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import subsystems.access_profile.model.User;
 import subsystems.community.model.*;
+import subsystems.team_management.model.Formation;
+import subsystems.team_management.model.FormationDAO;
 import utils.ReactionUtils;
 
 
@@ -25,7 +27,7 @@ public class PostServlet extends HttpServlet {
 
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("user") == null) {
-            response.sendRedirect("view/login.jsp");
+            response.sendRedirect(request.getContextPath() + "/view/login.jsp");
             return;
         }
 
@@ -70,8 +72,7 @@ public class PostServlet extends HttpServlet {
 
         // Se non c'è né testo né formazione, è un errore
         if (!hasText && !hasFormation) {
-            response.sendRedirect("view/community.jsp?error=EmptyContent");
-            return;
+            response.sendRedirect(request.getContextPath() + "/PostServlet?error=EmptyContent");            return;
         }
 
         if (testo == null) testo = "";
@@ -84,7 +85,7 @@ public class PostServlet extends HttpServlet {
         try {
             postDAO.doSave(post);
             // Redirect pulito alla pagina community/feed
-            response.sendRedirect("/PostServlet");
+            response.sendRedirect(request.getContextPath() + "/PostServlet");
         } catch (Exception e) {
             e.printStackTrace();
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Errore pubblicazione post");
@@ -96,27 +97,51 @@ public class PostServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        User user = (User) request.getSession().getAttribute("user");
-        ReactionDAO reactionDAO = new ReactionDAO();
+        // Recupero Utente in sessione (può essere null se visitatore)
+        HttpSession session = request.getSession(false);
+        User user = (session != null) ? (User) session.getAttribute("user") : null;
+
+        // Istanza dei DAO necessari
         PostDAO postDAO = new PostDAO();
         CommentDAO commentDAO = new CommentDAO();
+        ReactionDAO reactionDAO = new ReactionDAO();
+        FormationDAO formationDAO = new FormationDAO(); // <--- Aggiunto questo
 
-        // 1. Recupera tutti i post
-        List<Post> posts = postDAO.doRetrieveAll();
+        try {
+            // 1. Recupera tutti i post dal DB
+            List<Post> posts = postDAO.doRetrieveAll();
 
-        // 2. Per ogni post, recupera i suoi commenti
-        for (Post p : posts) {
-            p.setComments(commentDAO.doRetrieveByPostId(p.getId()));
+            // 2. Arricchisce ogni post con i dettagli (Commenti, Reazioni, Formazioni)
+            for (Post p : posts) {
 
-            Map<String, Integer> counts = ReactionUtils.calculateReactionCounts(p.getId());
-            p.setReactionCounts(counts);
+                // A. Recupera i commenti
+                p.setComments(commentDAO.doRetrieveByPostId(p.getId()));
 
-            if (user != null) {
-                String userReaction = reactionDAO.doRetrieveUserReaction(user.getEmail(), p.getId());
-                p.setCurrentUserReaction(userReaction);
+                // B. Calcola il numero di reazioni (Like, etc.)
+                Map<String, Integer> counts = ReactionUtils.calculateReactionCounts(p.getId());
+                p.setReactionCounts(counts);
+
+                // C. Se l'utente è loggato, controlla se ha già messo like
+                if (user != null) {
+                    String userReaction = reactionDAO.doRetrieveUserReaction(user.getEmail(), p.getId());
+                    p.setCurrentUserReaction(userReaction);
+                }
+
+                // D. RECUPERO FORMAZIONE (Il pezzo mancante)
+                // Se il post ha un ID formazione valido, carichiamo i dettagli completi (giocatori)
+                if (p.getFormationId() != null && p.getFormationId() > 0) {
+                    Formation fullFormation = formationDAO.doRetrieveById(p.getFormationId());
+                    p.setFormation(fullFormation);
+                }
             }
+
+            // 3. Passa la lista completa alla JSP
+            request.setAttribute("posts", posts);
+            request.getRequestDispatcher("view/community.jsp").forward(request, response);
+
+        } catch (Exception e) {
+            e.printStackTrace(); // Utile per debug
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Errore caricamento feed");
         }
-        request.setAttribute("posts", posts);
-        request.getRequestDispatcher("view/community.jsp").forward(request, response);
     }
 }

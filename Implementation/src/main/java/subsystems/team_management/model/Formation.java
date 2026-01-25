@@ -1,9 +1,6 @@
 package subsystems.team_management.model;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Formation {
     private int id;
@@ -16,7 +13,7 @@ public class Formation {
     private List<Player> players = new ArrayList<>();
 
     public Formation() {
-        this.playersMap = new HashMap<>();
+        this.playersMap = new LinkedHashMap<>();
     }
 
     // Costruttore rapido
@@ -24,7 +21,7 @@ public class Formation {
         this.userEmail = userEmail;
         this.giornata = giornata;
         this.modulo = modulo;
-        this.playersMap = new HashMap<>();
+        this.playersMap = new LinkedHashMap<>();
     }
 
     public void addPlayer(int playerId, String schieramento) {

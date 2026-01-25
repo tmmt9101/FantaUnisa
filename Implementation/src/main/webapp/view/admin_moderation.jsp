@@ -1,4 +1,5 @@
 <%@ page import="subsystems.access_profile.model.Role" %>
+<%@ page import="subsystems.access_profile.model.User" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <!DOCTYPE html>
@@ -16,9 +17,9 @@
 <body>
 
 <%
-  Role role = (Role) session.getAttribute("role");
-  if (role != Role.GESTORE_UTENTI) {
-    response.sendRedirect("login.jsp");
+  User user = (User) session.getAttribute("user"); // Recupera l'UTENTE
+  if (user == null || user.getRole() != Role.GESTORE_UTENTI) { // Controlla il RUOLO dell'utente
+    response.sendRedirect(request.getContextPath() + "/view/login.jsp");
     return;
   }
 %>
@@ -83,31 +84,40 @@
 
           <div class="admin-actions">
 
-            <form action="${pageContext.request.contextPath}/AdminActionServlet" method="post">
-              <input type="hidden" name="action" value="DELETE_POST">
-              <input type="hidden" name="postId" value="${report.postId}">
-              <input type="hidden" name="reportId" value="${report.id}">
+            <form action="${pageContext.request.contextPath}/DeleteContentServlet" method="post">
+              <input type="hidden" name="type" value="post">
+
+              <input type="hidden" name="id" value="${report.postId}">
+
+              <input type="hidden" name="from" value="admin">
+
               <button type="submit" class="btn btn-delete">
                 <i class="fas fa-trash"></i> Elimina Post
               </button>
             </form>
 
-            <form action="${pageContext.request.contextPath}/AdminActionServlet" method="post">
-              <input type="hidden" name="action" value="BAN_USER">
-              <input type="hidden" name="postId" value="${report.postId}"> <button type="submit" class="btn btn-ban">
-              <i class="fas fa-user-slash"></i> Ban Autore
-            </button>
+            <form action="${pageContext.request.contextPath}/DeleteUserServlet" method="post" onsubmit="return confirm('Sei sicuro di voler bannare questo utente? Questa azione è irreversibile.');">
+
+              <input type="hidden" name="postId" value="${report.postId}">
+
+              <input type="hidden" name="from" value="admin">
+
+              <button type="submit" class="btn btn-ban">
+                <i class="fas fa-user-slash"></i> Ban Autore
+              </button>
             </form>
 
-            <form action="${pageContext.request.contextPath}/AdminActionServlet" method="post">
-              <input type="hidden" name="action" value="IGNORE_REPORT">
-              <input type="hidden" name="reportId" value="${report.id}">
+            <form action="${pageContext.request.contextPath}/ReportServlet" method="get">
+              <input type="hidden" name="action" value="deleteReport">
+
+              <input type="hidden" name="id" value="${report.id}">
+
               <button type="submit" class="btn btn-ignore">
                 <i class="fas fa-check"></i> Ignora
               </button>
             </form>
 
-            <a href="${pageContext.request.contextPath}/view/community.jsp#post-${report.postId}" target="_blank" class="btn btn-view">
+            <a href="${pageContext.request.contextPath}/PostServlet#post-${report.postId}" target="_blank" class="btn btn-view">
               <i class="fas fa-external-link-alt"></i> Vedi Post
             </a>
 

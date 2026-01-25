@@ -132,7 +132,7 @@ public class FormationServlet extends HttpServlet {
                 // Oppure fare un forward alla PostServlet passandogli gli attributi
 
                 request.setAttribute("formationId", savedId);
-                request.setAttribute("postText", postText);
+                request.setAttribute("testo", postText);
 
                 // Forward alla PostServlet che si occuperà di salvare il post e reindirizzare
                 RequestDispatcher rd = request.getRequestDispatcher("/PostServlet");

@@ -13,9 +13,17 @@ import subsystems.community.model.Comment;
 import subsystems.community.model.CommentDAO;
 import subsystems.community.model.Post;
 import subsystems.community.model.PostDAO;
-/*+*/
+
 @WebServlet("/DeleteContentServlet")
 public class DeleteContentServlet extends HttpServlet {
+
+    // AGGIUNTA FONDAMENTALE: Gestisce le chiamate via Link (GET)
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        // Reindirizza la logica al doPost, così funziona sia con Link che con Form
+        doPost(request, response);
+    }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
@@ -23,16 +31,20 @@ public class DeleteContentServlet extends HttpServlet {
 
         HttpSession session = request.getSession(false);
         User user = (session != null) ? (User) session.getAttribute("user") : null;
+
+        // FIX PATH: Redirect assoluto
         if (user == null) {
-            response.sendRedirect("view/login.jsp");
+            response.sendRedirect(request.getContextPath() + "/view/login.jsp");
             return;
         }
 
         String type = request.getParameter("type"); // "post" o "comment"
         String idStr = request.getParameter("id");
+        String from = request.getParameter("from"); // "admin" o null
 
+        // FIX PATH: Redirect assoluto con slash
         if (idStr == null || type == null) {
-            response.sendRedirect("view/community.jsp?error=InvalidParams");
+            response.sendRedirect(request.getContextPath() + "/view/community.jsp?error=InvalidParams");
             return;
         }
 
@@ -40,56 +52,70 @@ public class DeleteContentServlet extends HttpServlet {
             int id = Integer.parseInt(idStr);
 
             if ("post".equals(type)) {
-                handlePostDeletion(id, user, response);
+                handlePostDeletion(id, user, response, request, from);
             } else if ("comment".equals(type)) {
-                handleCommentDeletion(id, user, response);
+                handleCommentDeletion(id, user, response, request);
             }
 
         } catch (Exception e) {
             e.printStackTrace();
-            response.sendRedirect("view/community.jsp?error=DeleteFailed");
+            response.sendRedirect(request.getContextPath() + "/view/community.jsp?error=DeleteFailed");
         }
     }
 
-    private void handlePostDeletion(int postId, User user, HttpServletResponse response) throws IOException {
+    private void handlePostDeletion(int postId, User user, HttpServletResponse response, HttpServletRequest request, String from) throws IOException {
         PostDAO postDAO = new PostDAO();
         Post post = postDAO.doRetrieveById(postId);
 
         if (post == null) {
-            response.sendRedirect("view/community.jsp?error=NotFound");
+            // Se il post non esiste, torniamo indietro
+            if ("admin".equals(from)) {
+                response.sendRedirect(request.getContextPath() + "/ReportServlet");
+            } else {
+                response.sendRedirect(request.getContextPath() + "/PostServlet?error=NotFound");
+            }
             return;
         }
 
-        // 2. CONTROLLO AUTORIZZAZIONE: Solo l'autore O l'Admin possono cancellare
+        // CONTROLLO AUTORIZZAZIONE
         boolean isOwner = post.getUserEmail().equals(user.getEmail());
         boolean isAdmin = (user.getRole() == Role.GESTORE_UTENTI);
 
         if (isOwner || isAdmin) {
             postDAO.doDelete(postId);
-            response.sendRedirect("PostServlet?msg=Deleted");
+
+            // LOGICA INTELLIGENTE:
+            // Se sono un admin, torno alle segnalazioni. Se sono utente, torno al feed.
+            if ("admin".equals(from)) {
+                // Torna alla lista report (ReportServlet doGet)
+                response.sendRedirect(request.getContextPath() + "/ReportServlet?msg=PostDeleted");
+            } else {
+                // Torna al feed community
+                response.sendRedirect(request.getContextPath() + "/PostServlet?msg=Deleted");
+            }
         } else {
-            response.sendRedirect("view/community.jsp?error=Unauthorized");
+            response.sendRedirect(request.getContextPath() + "/PostServlet?error=Unauthorized");
         }
     }
 
-    private void handleCommentDeletion(int commentId, User user, HttpServletResponse response) throws IOException {
+    private void handleCommentDeletion(int commentId, User user, HttpServletResponse response, HttpServletRequest request) throws IOException {
         CommentDAO commentDAO = new CommentDAO();
         Comment comment = commentDAO.doRetrieveById(commentId);
 
         if (comment == null) {
-            response.sendRedirect("view/community.jsp");
+            response.sendRedirect(request.getContextPath() + "/PostServlet");
             return;
         }
 
-        // Controllo Autorizzazione per commento
         boolean isOwner = comment.getUserEmail().equals(user.getEmail());
         boolean isAdmin = (user.getRole() == Role.GESTORE_UTENTI);
 
         if (isOwner || isAdmin) {
             commentDAO.doDelete(commentId);
-            response.sendRedirect("PostServlet?msg=CommentDeleted#" + comment.getPostId());
+            // Torna al post specifico usando l'ancora #post-ID
+            response.sendRedirect(request.getContextPath() + "/PostServlet?msg=CommentDeleted#post-" + comment.getPostId());
         } else {
-            response.sendRedirect("view/community.jsp?error=Unauthorized");
+            response.sendRedirect(request.getContextPath() + "/PostServlet?error=Unauthorized");
         }
     }
 }
